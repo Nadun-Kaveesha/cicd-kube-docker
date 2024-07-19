@@ -52,11 +52,11 @@ pipeline {
 	stage('CODE ANALYSIS with SONARQUBE') {
 
             environment {
-                SONAR_URL = "http://54.209.200.31:9000"
+                scannerHome = tool 'mysonarscanner4'
             }
 
             steps {
-                withCredentials([string(credentialsId: 'newultimatesonar', variable: 'SONAR_AUTH_TOKEN')]) {
+                withSonarQubeEnv('sonar-pro') {
                     sh '''${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=vprofile \
                    -Dsonar.projectName=vprofile-repo \
                    -Dsonar.projectVersion=1.0 \
@@ -72,7 +72,6 @@ pipeline {
                 }
             }
         }
-
 
 
         stage('Build App Image') {
