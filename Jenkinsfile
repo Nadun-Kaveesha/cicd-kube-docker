@@ -1,18 +1,18 @@
 pipeline {
 
     agent any
-/*
+
 	tools {
-        maven "maven3"
+        maven "MAVEN3"
     }
-*/
+
     environment {
         registry = "nadun2005/vproappdock"
-        registryCredential = "dockerhub"
-        ARTVERSION = "${env.BUILD_ID}"
+        registryCredential = 'docker-cred'
     }
 
     stages{
+
 
         stage('BUILD'){
             steps {
@@ -50,36 +50,51 @@ pipeline {
         }
 
 
-        stage('Build Docker app img'){
-            steps{
-                script{
-                    dockerImage = docker.build registry + ":V$BUILD_NUMBER"
-                }
+        stage('Build App Image') {
+          steps {
+            script {
+              dockerImage = docker.build registry + ":V$BUILD_NUMBER"
             }
+          }
         }
 
         stage('Upload Image'){
-            steps{
-                script{
-                    docker.withRegistry('', registryCredential){
-                        dockerImage.push("V$BUILD_NUMBER")
-                        dockerImage.push('latest')
-                    }
-                }
+          steps{
+            script {
+              docker.withRegistry('', registryCredential) {
+                dockerImage.push("V$BUILD_NUMBER")
+                dockerImage.push('latest')
+              }
             }
+          }
         }
 
-        stage('Remove unused docker image'){
-            steps{
-                sh "docker rmi $registry:V$BUILD_NUMBER"
-            }
+        stage('Remove Unused docker image') {
+          steps{
+            sh "docker rmi $registry:V$BUILD_NUMBER"
+          }
         }
 
-        stage('Kubernetes Deploy'){
-            agent{label 'KOPS'}
-                steps{
-                    sh "helm upgrade --install --force vprofile-stack helm/vprofilecharts --set appimage=${registry}:V${BUILD_NUMBER} --namespace prod"
+
+
+        stage('Update Deployment File') {
+            environment {
+                GIT_REPO_NAME = "vprofile-manifest"
+                GIT_USER_NAME = "Nadun-Kaveesha"
+            }
+            steps {
+                withCredentials([string(credentialsId: 'GithubToken', variable: 'GITHUB_TOKEN')]) {
+                    sh '''
+                        git config user.email "nadunkaveesha2018@gmail.com"
+                        git config user.name "Nadun-Kaveesha"
+                        BUILD_NUMBER=${BUILD_NUMBER}
+                        sed -i "s|appimage: .*|appimage: ${registry}:V${BUILD_NUMBER}|" vprofile-manifest/helm/vprofilecharts/values.yaml
+                        git add helm/vprofilecharts/values.yaml
+                        git commit -m "Update deployment image to version ${BUILD_NUMBER}"
+                        git push https://${GITHUB_TOKEN}@github.com/${GIT_USER_NAME}/${GIT_REPO_NAME} HEAD:main
+                    '''
                 }
+            }
         }
     }
 
