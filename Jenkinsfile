@@ -103,7 +103,7 @@ pipeline {
 
         stage('Update Deployment File') {
             environment {
-                GIT_REPO_NAME = "vprofile-manifest"
+                GIT_REPO_NAME = "cicd-kube-docker"
                 GIT_USER_NAME = "Nadun-Kaveesha"
             }
             steps {
