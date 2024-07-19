@@ -112,7 +112,7 @@ pipeline {
                         git config user.email "nadunkaveesha2018@gmail.com"
                         git config user.name "Nadun-Kaveesha"
                         BUILD_NUMBER=${BUILD_NUMBER}
-                        sed -i "s|appimage: .*|appimage: ${registry}:V${BUILD_NUMBER}|" helm/vprofilecharts/values.yaml
+                        sed -i "s#\\(image: nadun2005/vproappdock:\\)[^ ]*#\\1${BUILD_NUMBER}#g" helm/vprofilecharts/templates/vproappdep.yml
                         git add helm/.
                         git commit -m "Update deployment image to version ${BUILD_NUMBER}"
                         git push https://${GITHUB_TOKEN}@github.com/${GIT_USER_NAME}/${GIT_REPO_NAME} HEAD:main
